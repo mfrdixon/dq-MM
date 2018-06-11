@@ -1,7 +1,7 @@
-# Trading Gym
+# DQ-MM
 
-Trading Gym is an open-source project for the development of reinforcement learning algorithms in the context of trading.
-It is currently composed of a single environment and implements a generic way of feeding this trading environment different type of price data.
+DQ-MM is based on Trading Gym, an open-source project for the development of reinforcement learning algorithms in the context of trading.
+It is currently composed of a single environment and implements a generic way of feeding this trading environment different type of price data. The focus of the project is level 2 data, i.e. using depths and price levels in the limit order book.
 
 ## Installation
 
