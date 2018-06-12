@@ -1,6 +1,6 @@
 import csv
 import sys
-sys.path.append('/Users/matthewdixon/Downloads/Trading-Gym/')
+sys.path.append('/Users/matthewdixon/Downloads/dq-MM/')
 import numpy as np
 from tgym.gens import CSVStreamer
 
