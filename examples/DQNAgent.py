@@ -1,7 +1,7 @@
 
 # coding: utf-8
 
-# In[29]:
+# In[1]:
 
 """
 In this example we demonstrate how to implement a DQN agent and
@@ -11,17 +11,16 @@ Do not hesitate to run several times and/or tweak parameters to get better resul
 Inspired from https://github.com/keon/deep-q-learning
 """
 import random
-
+import sys
+sys.path.append('/Users/matthewdixon/Downloads/dq-MM/')
 import numpy as np
 from keras.layers import Dense
 from keras.models import Sequential
 from keras.optimizers import Adam
-import sys
-sys.path.append('/Users/matthewdixon/Downloads/Trading-Gym/')
 from tgym.envs import SpreadTrading
 
 
-# In[17]:
+# In[106]:
 
 class DQNAgent:
     def __init__(self,
@@ -68,12 +67,23 @@ class DQNAgent:
         """Acting Policy of the DQNAgent
         """
         action = np.zeros(self.action_size)
-        if np.random.rand() <= self.epsilon:
-            action[random.randrange(self.action_size)] = 1
+        valid_actions = []
+        position = state[-3:]
+        
+        if all(position == [1,0,0]): # flat
+            valid_actions = [0,1,2]
+        elif all(position == [0,1,0]):  # long
+            valid_actions = [0,2]  # hold or sell
+        else: # short
+            valid_actions = [0,1]  # hold or buy
+        
+        if np.random.rand() <= self.epsilon:    
+            action[valid_actions[random.randrange(len(valid_actions))]] = 1   
         else:
             state = state.reshape(1, self.state_size)
             act_values = self.brain.predict(state)
-            action[np.argmax(act_values[0])] = 1
+            #print act_values[0]
+            action[valid_actions[np.argmax(act_values[0][valid_actions])]] = 1
         return action
 
     def observe(self, state, action, reward, next_state, done, warming_up=False):
@@ -118,17 +128,19 @@ class DQNAgent:
         return state_batch, action_batch, reward_batch, next_state_batch, done_batch
 
 
-# In[41]:
+# In[105]:
 
 import matplotlib.pyplot as plt
-import sys
-sys.path.append('/Users/matthewdixon/Downloads/Trading-Gym/')
-from tgym.envs import SpreadTrading
+#import sys
+#sys.path.append('/Users/matthewdixon/Downloads/Trading-Gym/')
+#from tgym.envs import SpreadTrading
+#from tgym.gens.deterministic import WavySignal
+#from tgym.gens.random import AR1
 from tgym.gens.csvstream import CSVStreamer
 # Instantiating the environmnent
 generator = CSVStreamer(filename='../data/AMZN-L1.csv')
 #generator = AR1(a=0.1, ba_spread=0.1)   #WavySignal(period_1=25, period_2=50, epsilon=-0.5)
-episodes = 200
+episodes = 100
 episode_length = 400
 trading_fee = .0
 time_fee = 0
@@ -140,8 +152,7 @@ environment = SpreadTrading(spread_coefficients=[1],
                                 history_length=history_length)
 
 
-
-# In[42]:
+# In[102]:
 
 state = environment.reset()
 # Instantiating the agent
@@ -163,18 +174,44 @@ agent = DQNAgent(state_size=state_size,
                      learning_rate=learning_rate,
                      batch_size=batch_size,
                      epsilon_min=epsilon_min)
+
+
+# In[103]:
+
 # Warming up the agent
 for _ in range(memory_size):
         action = agent.act(state)
         next_state, reward, done, _ = environment.step(action)
         agent.observe(state, action, reward, next_state, done, warming_up=True)
+        
+rews = []
+losses = []
+epsilons = []
 # Training the agent
 for ep in range(episodes):
     state = environment.reset()
     rew = 0
     for _ in range(episode_length):
         action = agent.act(state)
+        
+        for position in environment._positions:
+          if all(environment._position==environment._positions[position]):
+            position_name = position
+        
+    
+        for _action in environment._actions:
+          if all(action==environment._actions[_action]):
+            action_name = _action
+        
         next_state, reward, done, _ = environment.step(action)
+        
+        for position in environment._positions:
+          if all(environment._position==environment._positions[position]):
+            next_position_name = position
+        
+        
+           
+        #print position_name, action_name, next_position_name
         loss = agent.observe(state, action, reward, next_state, done)
         state = next_state
         rew += reward
@@ -182,16 +219,51 @@ for ep in range(episodes):
            + "| rew:" + str(round(rew, 2))
            + "| eps:" + str(round(agent.epsilon, 2))
            + "| loss:" + str(round(loss.history["loss"][0], 4)))
+    rews.append(rew)
+    epsilons.append(agent.epsilon)
+    losses.append(loss.history["loss"][0])
 
 
 # In[ ]:
+
+plt.plot(epsilons)
+plt.xlabel('episodes')
+plt.ylabel('eps')
+plt.savefig('epsilons.jpg')
+
+
+# In[ ]:
+
+plt.plot(rews)
+plt.xlabel('episodes')
+plt.ylabel('rewards')
+plt.savefig('rewards.jpg')
+
+
+# In[104]:
 
 # Running the agent
 done = False
 state = environment.reset()
 while not done:
     action = agent.act(state)
+    
+    for position in environment._positions:
+          if all(environment._position==environment._positions[position]):
+            position_name = position
+        
+    for _action in environment._actions:
+          if all(action==environment._actions[_action]):
+            action_name = _action
+    
     state, _, done, info = environment.step(action)
+    
+    for position in environment._positions:
+          if all(environment._position==environment._positions[position]):
+            next_position_name = position
+               
+    print position_name, action_name, next_position_name
+    
     if 'status' in info and info['status'] == 'Closed plot':
         done = True
     else:
