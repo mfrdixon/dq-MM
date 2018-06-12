@@ -113,17 +113,17 @@ class SpreadTrading(Env):
         fill_ask = True 
         fill_bid = True 
         
-        if q>0.8:
-            fill_bid = False 
-        elif q<0.2:
-            fill_ask = False 
+        #if q>0.8:
+        #    fill_bid = False 
+        #elif q<0.2:
+        #    fill_ask = False 
 
         if all(action == self._actions['buy']) and (fill_bid):
             reward -= self._trading_fee
             if all(self._position == self._positions['flat']):         
                 self._position = self._positions['long']
                 self._entry_price =  self._prices_history[-1][0]  # bid
-                reward -= self._entry_price
+                #reward -= 0 #self._entry_price
             elif all(self._position == self._positions['short']): # closed out a short position          
                 self._position = self._positions['flat']
                 self._exit_price = self._prices_history[-1][0]  # bid
