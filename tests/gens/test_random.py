@@ -1,6 +1,6 @@
 import numpy as np
 import sys
-sys.path.append('/Users/matthewdixon/Downloads/Trading-Gym/')
+sys.path.append('/Users/matthewdixon/Downloads/dq-MM/')
 from tgym.gens.random import AR1, RandomWalk
 
 
